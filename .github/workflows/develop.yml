@@ -17,8 +17,6 @@ jobs:
         run: docker-compose up -d
       - name: Build sveltekit
         run: docker container exec svelte_container npm run build
-      - name: Copy build artifacts
-        run: docker cp $(docker-compose ps -q web):/app/build ./build
       - name: Clean up
         run: docker-compose down
 
