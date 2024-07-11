@@ -1,0 +1,38 @@
+name: Release to Develop Environment
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        run: docker-compose build
+      - name: Start Container
+        run: docker-compose up -d
+      - name: Build sveltekit
+        run: docker container exec svelte_container npm run build
+      - name: Copy build artifacts
+        run: docker cp $(docker-compose ps -q web):/app/build ./build
+      - name: Clean up
+        run: docker-compose down
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: ssh and deploy
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "./build/*"
+          target: "./glaesses.net/public_html/dev"
